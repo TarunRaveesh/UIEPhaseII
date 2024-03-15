@@ -1,14 +1,7 @@
-# -*- coding: utf-8 -*-
-# @Author  : Lintao Peng
-# @File    : SGFMT.py
-# coding=utf-8
-# Design based on the Vit
-
 import torch.nn as nn
 from net.IntmdSequential import IntermediateSequential
 
 
-#实现了自注意力机制，相当于unet的bottleneck层
 class SelfAttention(nn.Module):
     def __init__(
         self, dim, heads=8, qkv_bias=False, qk_scale=None, dropout_rate=0.0

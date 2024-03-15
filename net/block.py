@@ -11,10 +11,6 @@ from torch.nn import ModuleList
 from torch.nn import Conv2d
 from torch.nn import LeakyReLU
 
-
-
-
-#PixelwiseNorm代替了BatchNorm
 class PixelwiseNorm(th.nn.Module):
     def __init__(self):
         super(PixelwiseNorm, self).__init__()
@@ -30,13 +26,10 @@ class PixelwiseNorm(th.nn.Module):
         y = x / y  # normalize the input x volume
         return y
 
-
-
 class MinibatchStdDev(th.nn.Module):
     """
     Minibatch standard deviation layer for the discriminator
     """
-
     def __init__(self):
         """
         derived class constructor
@@ -182,7 +175,6 @@ class _equalized_deconv2d(th.nn.Module):
 
 
 #basic block of the encoding part of the genarater
-#编码器的基本卷积块
 class conv_block(nn.Module):
     """
     Convolution Block 

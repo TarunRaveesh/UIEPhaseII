@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author  : Lintao Peng
-# @File    : CMSFFT.py
-# coding=utf-8
-# Design based on the CTrans
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -21,9 +16,6 @@ from torch.nn.modules.utils import _pair
 #transformer.num_layers = 4
 #expand_ratio           = 4
 
-
-
-#线性编码
 class Channel_Embeddings(nn.Module):
     """Construct the embeddings from patch, position embeddings.
     """
@@ -49,9 +41,6 @@ class Channel_Embeddings(nn.Module):
         embeddings = x + self.position_embeddings
         embeddings = self.dropout(embeddings)
         return embeddings
-
-
-#特征重组
 class Reconstruct(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, scale_factor):
         super(Reconstruct, self).__init__()
@@ -102,7 +91,6 @@ class Attention_org(nn.Module):
             query4 = nn.Linear(channel_num[3], channel_num[3], bias=False)
             key = nn.Linear( self.KV_size,  self.KV_size, bias=False)
             value = nn.Linear(self.KV_size,  self.KV_size, bias=False)
-            #把所有的值都重新复制一遍，deepcopy为深复制，完全脱离原来的值，即将被复制对象完全再复制一遍作为独立的新个体单独存在
             self.query1.append(copy.deepcopy(query1))
             self.query2.append(copy.deepcopy(query2))
             self.query3.append(copy.deepcopy(query3))
@@ -374,4 +362,3 @@ class ChannelTransformer(nn.Module):
         x4 = x4 + en4  if en4 is not None else None
 
         return x1, x2, x3, x4, attn_weights
-

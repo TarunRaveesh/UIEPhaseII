@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author  : Lintao Peng
-# @File    : Ushape_Trans.py
-# coding=utf-8
-# Design based on the pix2pix
-
 import torch.nn as nn
 import torch.nn.functional as F 
 import torch
@@ -23,12 +17,6 @@ from net.PositionalEncoding import FixedPositionalEncoding,LearnedPositionalEnco
 from net.CMSFFT import ChannelTransformer
 
 
-
-
-
-
-
-##权重初始化
 def weights_init_normal(m):
     classname = m.__class__.__name__
     if classname.find("Conv") != -1:
@@ -39,13 +27,7 @@ def weights_init_normal(m):
 
 
 
-
-
-
 class Generator(nn.Module):
-	"""
-	MSG-Unet-GAN的生成器部分
-	"""
 	def __init__(self,
 		img_dim=256,
 		patch_dim=16,
@@ -65,24 +47,22 @@ class Generator(nn.Module):
 		assert embedding_dim % num_heads == 0
 		assert img_dim % patch_dim == 0
 
-		self.out_ch=out_ch #输出通道数
-		self.in_ch=in_ch #输入通道数
-		self.img_dim = img_dim   #输入图片尺寸
+		self.out_ch=out_ch 
+		self.in_ch=in_ch 
+		self.img_dim = img_dim
 		self.embedding_dim = embedding_dim  #512
-		self.num_heads = num_heads  #多头注意力中头的数量
-		self.patch_dim = patch_dim  #每个patch的尺寸
-		self.num_channels = num_channels  #图片通道数?
-		self.dropout_rate = dropout_rate  #drop-out比率
-		self.attn_dropout_rate = attn_dropout_rate  #注意力模块的dropout比率
+		self.num_heads = num_heads  
+		self.patch_dim = patch_dim  
+		self.num_channels = num_channels  
+		self.dropout_rate = dropout_rate  
+		self.attn_dropout_rate = attn_dropout_rate  
 		self.conv_patch_representation = conv_patch_representation  #True
 
-		self.num_patches = int((img_dim // patch_dim) ** 2)  #将三通道图片分成多少块
-		self.seq_length = self.num_patches  #每个sequence的长度为patches的大小
+		self.num_patches = int((img_dim // patch_dim) ** 2)  
+		self.seq_length = self.num_patches  
 		self.flatten_dim = 128 * num_channels  #128*3=384
 
-        #线性编码
 		self.linear_encoding = nn.Linear(self.flatten_dim, self.embedding_dim)
-		#位置编码
 		if positional_encoding_type == "learned":
 			self.position_encoding = LearnedPositionalEncoding(
 				self.seq_length, self.embedding_dim, self.seq_length
@@ -172,7 +152,7 @@ class Generator(nn.Module):
 
 		# self.active = torch.nn.Sigmoid()
 		# 
-	def reshape_output(self,x): #将transformer的输出resize为原来的特征图尺寸
+	def reshape_output(self,x):
 		x = x.view(
 			x.size(0),
 			int(self.img_dim / self.patch_dim),
@@ -232,21 +212,19 @@ class Generator(nn.Module):
 
 		#spatial-wise transformer-based attention
 		residual=e5
-		#中间的隐变量
-		#conv_x应该接受256通道，输出512通道的中间隐变量
 		e5= self.bn(e5)
 		e5=self.relu(e5)
 		e5= self.Conv_x(e5) #out->512*16*16 shape->B,512,16,16
 		e5= e5.permute(0, 2, 3, 1).contiguous()  # B,512,16,16->B,16,16,512
-		e5= e5.view(e5.size(0), -1, self.embedding_dim) #B,16,16,512->B,16*16,512 线性映射层
-		e5= self.position_encoding(e5) #位置编码
-		e5= self.pe_dropout(e5)	 #预dropout层
+		e5= e5.view(e5.size(0), -1, self.embedding_dim) #B,16,16,512->B,16*16,512
+		e5= self.position_encoding(e5) 
+		e5= self.pe_dropout(e5)	
 		# apply transformer
 		e5= self.transformer(e5)
 		e5= self.pre_head_ln(e5)	
 		e5= self.reshape_output(e5)#out->512*16*16 shape->B,512,16,16
 		e5=self.Conv5(e5) #out->256,16,16 shape->B,256,16,16
-		#residual是否要加bn和relu？
+		
 		e5=e5+residual
 
 
@@ -335,7 +313,6 @@ class Discriminator(nn.Module):
 
 
     def forward(self, img_A, inputs):
-    	#inputs图片尺寸从小到大
         # Concatenate image and condition image by channels to produce input
         #img_input = torch.cat((img_A, img_B), 1)
         #img_A_128= F.interpolate(img_A, size=[128, 128])
