@@ -225,7 +225,6 @@ class conv_block(nn.Module):
 
 
 #basic up convolution block of the encoding part of the genarater
-#编码器的基本卷积块
 class up_conv(nn.Module):
     """
     Up Convolution Block
@@ -272,7 +271,6 @@ class up_conv(nn.Module):
 
 
 
-#判别器的最后一层
 class DisFinalBlock(th.nn.Module):
     """ Final block for the Discriminator """
 
@@ -330,8 +328,6 @@ class DisFinalBlock(th.nn.Module):
         return y
 
 
-
-#判别器基本卷积块
 class DisGeneralConvBlock(th.nn.Module):
     """ General block in the discriminator  """
 
@@ -385,7 +381,6 @@ class from_rgb(nn.Module):
     """
     The RGB image is transformed into a multi-channel feature map to be concatenated with 
     the feature map with the same number of channels in the network
-    把RGB图转换为多通道特征图，以便与网络中相同通道数的特征图拼接
     """
     def __init__(self, outchannels, use_eql=True):
         super(from_rgb, self).__init__()
@@ -411,7 +406,6 @@ class from_rgb(nn.Module):
 
 class to_rgb(nn.Module):
     """
-    把多通道特征图转换为RGB三通道图，以便输入判别器
     The multi-channel feature map is converted into RGB image for input to the discriminator
     """
     def __init__(self, inchannels, use_eql=True):

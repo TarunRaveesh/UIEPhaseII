@@ -1,12 +1,17 @@
 import torch
+import torchvision.transforms.functional as F
+from PIL import Image
 
 
 def gamma_correction(image, gamma):
-    normalized_image = image / 255.0
-    gamma_corrected = torch.pow(normalized_image, gamma)
+    """Apply gamma correction to an image tensor."""
+    # Convert the image tensor to a PIL image
+    image_pil = F.to_pil_image(image)
 
-    # Denormalize to the original range [0, 255]
-    # PyTorch equivalent of astype('uint8')
-    gamma_corrected = (gamma_corrected * 255).clamp(0, 255).byte()
+    # Apply gamma correction
+    image_corrected = F.adjust_gamma(image_pil, gamma)
 
-    return gamma_corrected
+    # Convert the corrected image back to a tensor
+    image_corrected_tensor = F.to_tensor(image_corrected)
+
+    return image_corrected_tensor
