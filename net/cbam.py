@@ -5,21 +5,33 @@ import torch.nn as nn
 class ChannelAttentionModule(nn.Module):
     def __init__(self, in_channels, reduction_ratio=16):
         super().__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.max_pool = nn.AdaptiveMaxPool2d(1)
+
+        # Calculate intermediate channels for efficient bottleneck
+        mid_channels = in_channels // reduction_ratio
+
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)  # Global average pooling layer
+        self.max_pool = nn.AdaptiveMaxPool2d(1)  # Global max pooling layer
 
         self.shared_mlp = nn.Sequential(
-            nn.Linear(in_channels, in_channels // reduction_ratio),
-            nn.ReLU(),
-            nn.Linear(in_channels // reduction_ratio, in_channels)
+            nn.Linear(in_channels, mid_channels),  # Reduce dimensionality
+            nn.ReLU(),  # Non-linear activation
+            nn.Linear(mid_channels, in_channels)  # Restore dimensionality
         )
-        self.sigmoid = nn.Sigmoid()
+        self.sigmoid = nn.Sigmoid()  # Sigmoid for smooth attention weights
 
     def forward(self, x):
-        avg_out = self.shared_mlp(self.avg_pool(x).view(x.size(0), -1)) 
-        max_out = self.shared_mlp(self.max_pool(x).view(x.size(0), -1))
-        output = self.sigmoid(avg_out + max_out) 
-        return output.unsqueeze(2).unsqueeze(3) * x
+        # Average pooling and squeeze channels
+        avg_out = self.avg_pool(x).view(x.size(0), -1)  
+        # Max pooling and squeeze channels
+        max_out = self.max_pool(x).view(x.size(0), -1)
+
+        # Process with shared MLP layers
+        avg_out = self.shared_mlp(avg_out)
+        max_out = self.shared_mlp(max_out)
+
+        # Combine attention, apply sigmoid, and reshape back to feature map size
+        output = self.sigmoid(avg_out + max_out)
+        return output.unsqueeze(2).unsqueeze(3) * x  # Multiply with input
 
 
 class SpatialAttentionModule(nn.Module):
@@ -29,11 +41,18 @@ class SpatialAttentionModule(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
+        # Average pooling across channels
         avg_out = torch.mean(x, dim=1, keepdim=True)
+        # Max pooling across channels
         max_out, _ = torch.max(x, dim=1, keepdim=True)
+
+        # Concatenate average and max pooled features
         output = torch.cat([avg_out, max_out], dim=1)
-        output = self.sigmoid(self.conv2d(output))
-        return output * x
+
+        # Convolution for spatial attention
+        output = self.conv2d(output)
+        # Apply sigmoid and multiply with original input
+        return self.sigmoid(output) * x 
 
 
 class CBAM(nn.Module):
@@ -43,6 +62,8 @@ class CBAM(nn.Module):
         self.spatial_attention = SpatialAttentionModule(kernel_size)
 
     def forward(self, x):
+        # Apply channel attention first
         out = self.channel_attention(x)
+        # Then apply spatial attention 
         out = self.spatial_attention(out)
-        return out
+        return out 

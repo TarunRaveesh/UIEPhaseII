@@ -1,15 +1,11 @@
 import torch.nn as nn
-import torch.nn.functional as F 
+import torch.nn.functional as F
 import torch as th
-import datetime
-import os
-import time
-import timeit
-import copy
-import numpy as np 
+import numpy as np
 from torch.nn import ModuleList
 from torch.nn import Conv2d
 from torch.nn import LeakyReLU
+
 
 class PixelwiseNorm(th.nn.Module):
     def __init__(self):
@@ -26,10 +22,12 @@ class PixelwiseNorm(th.nn.Module):
         y = x / y  # normalize the input x volume
         return y
 
+
 class MinibatchStdDev(th.nn.Module):
     """
     Minibatch standard deviation layer for the discriminator
     """
+
     def __init__(self):
         """
         derived class constructor
@@ -64,13 +62,11 @@ class MinibatchStdDev(th.nn.Module):
         return y
 
 
-
-
-
 # ==========================================================
 # Equalized learning rate blocks:
 # extending Conv2D and Deconv2D layers for equalized learning rate logic
 # ==========================================================
+
 class _equalized_conv2d(th.nn.Module):
     """ conv2d with the concept of equalized learning rate
         Args:
@@ -173,18 +169,18 @@ class _equalized_deconv2d(th.nn.Module):
         return ", ".join(map(str, self.weight.shape))
 
 
-
-#basic block of the encoding part of the genarater
+# basic block of the encoding part of the genarater
 class conv_block(nn.Module):
     """
     Convolution Block 
     with two convolution layers
     """
-    def __init__(self, in_ch, out_ch,use_eql=True):
+
+    def __init__(self, in_ch, out_ch, use_eql=True):
         super(conv_block, self).__init__()
-        
+
         if use_eql:
-            self.conv_1=  _equalized_conv2d(in_ch, out_ch, (1, 1),
+            self.conv_1 = _equalized_conv2d(in_ch, out_ch, (1, 1),
                                             pad=0, bias=True)
             self.conv_2 = _equalized_conv2d(out_ch, out_ch, (3, 3),
                                             pad=1, bias=True)
@@ -211,28 +207,26 @@ class conv_block(nn.Module):
         """
         from torch.nn.functional import interpolate
 
-        #y = interpolate(x, scale_factor=2)
-        y=self.conv_1(self.lrelu(self.pixNorm(x)))
-        residual=y
-        y=self.conv_2(self.lrelu(self.pixNorm(y)))
-        y=self.conv_3(self.lrelu(self.pixNorm(y)))
-        y=y+residual
-
+        # y = interpolate(x, scale_factor=2)
+        y = self.conv_1(self.lrelu(self.pixNorm(x)))
+        residual = y
+        y = self.conv_2(self.lrelu(self.pixNorm(y)))
+        y = self.conv_3(self.lrelu(self.pixNorm(y)))
+        y = y+residual
 
         return y
 
 
-
-
-#basic up convolution block of the encoding part of the genarater
+# basic up convolution block of the encoding part of the genarater
 class up_conv(nn.Module):
     """
     Up Convolution Block
     """
-    def __init__(self, in_ch, out_ch,use_eql=True):
+
+    def __init__(self, in_ch, out_ch, use_eql=True):
         super(up_conv, self).__init__()
         if use_eql:
-            self.conv_1=  _equalized_conv2d(in_ch, out_ch, (1, 1),
+            self.conv_1 = _equalized_conv2d(in_ch, out_ch, (1, 1),
                                             pad=0, bias=True)
             self.conv_2 = _equalized_conv2d(out_ch, out_ch, (3, 3),
                                             pad=1, bias=True)
@@ -260,15 +254,13 @@ class up_conv(nn.Module):
         from torch.nn.functional import interpolate
 
         x = interpolate(x, scale_factor=2, mode="bilinear")
-        y=self.conv_1(self.lrelu(self.pixNorm(x)))
-        residual=y
-        y=self.conv_2(self.lrelu(self.pixNorm(y)))
-        y=self.conv_3(self.lrelu(self.pixNorm(y)))        
-        y=y+residual
+        y = self.conv_1(self.lrelu(self.pixNorm(x)))
+        residual = y
+        y = self.conv_2(self.lrelu(self.pixNorm(y)))
+        y = self.conv_3(self.lrelu(self.pixNorm(y)))
+        y = y+residual
 
         return y
-
-
 
 
 class DisFinalBlock(th.nn.Module):
@@ -291,7 +283,7 @@ class DisFinalBlock(th.nn.Module):
         if use_eql:
             self.conv_1 = _equalized_conv2d(in_channels + 1, in_channels, (3, 3),
                                             pad=1, bias=True)
-            self.conv_2 = _equalized_conv2d(in_channels, in_channels, (4, 4),stride=2,pad=1,
+            self.conv_2 = _equalized_conv2d(in_channels, in_channels, (4, 4), stride=2, pad=1,
                                             bias=True)
 
             # final layer emulates the fully connected layer
@@ -299,7 +291,8 @@ class DisFinalBlock(th.nn.Module):
 
         else:
             # modules required:
-            self.conv_1 = Conv2d(in_channels + 1, in_channels, (3, 3), padding=1, bias=True)
+            self.conv_1 = Conv2d(in_channels + 1, in_channels,
+                                 (3, 3), padding=1, bias=True)
             self.conv_2 = Conv2d(in_channels, in_channels, (4, 4), bias=True)
 
             # final conv layer emulates a fully connected layer
@@ -374,26 +367,23 @@ class DisGeneralConvBlock(th.nn.Module):
         return y
 
 
-
-        
-
 class from_rgb(nn.Module):
     """
     The RGB image is transformed into a multi-channel feature map to be concatenated with 
     the feature map with the same number of channels in the network
     """
+
     def __init__(self, outchannels, use_eql=True):
         super(from_rgb, self).__init__()
         if use_eql:
             self.conv_1 = _equalized_conv2d(3, outchannels, (1, 1), bias=True)
         else:
-            self.conv_1 = nn.Conv2d(3, outchannels, (1, 1),bias=True)
+            self.conv_1 = nn.Conv2d(3, outchannels, (1, 1), bias=True)
         # pixel_wise feature normalizer:
         self.pixNorm = PixelwiseNorm()
 
         # leaky_relu:
         self.lrelu = LeakyReLU(0.2)
-
 
     def forward(self, x):
         """
@@ -404,20 +394,18 @@ class from_rgb(nn.Module):
         y = self.pixNorm(self.lrelu(self.conv_1(x)))
         return y
 
+
 class to_rgb(nn.Module):
     """
     The multi-channel feature map is converted into RGB image for input to the discriminator
     """
+
     def __init__(self, inchannels, use_eql=True):
         super(to_rgb, self).__init__()
         if use_eql:
             self.conv_1 = _equalized_conv2d(inchannels, 3, (1, 1), bias=True)
         else:
-            self.conv_1 = nn.Conv2d(inchannels, 3, (1, 1),bias=True)
-
-
-
-
+            self.conv_1 = nn.Conv2d(inchannels, 3, (1, 1), bias=True)
 
     def forward(self, x):
         """
@@ -430,16 +418,17 @@ class to_rgb(nn.Module):
 
         return y
 
+
 class Flatten(nn.Module):
     def forward(self, x):
         return x.view(x.size(0), -1)
-
 
 
 class CCA(nn.Module):
     """
     CCA Block
     """
+
     def __init__(self, F_g, F_x):
         super().__init__()
         self.mlp_x = nn.Sequential(
@@ -452,12 +441,15 @@ class CCA(nn.Module):
 
     def forward(self, g, x):
         # channel-wise attention
-        avg_pool_x = F.avg_pool2d( x, (x.size(2), x.size(3)), stride=(x.size(2), x.size(3)))
+        avg_pool_x = F.avg_pool2d(
+            x, (x.size(2), x.size(3)), stride=(x.size(2), x.size(3)))
         channel_att_x = self.mlp_x(avg_pool_x)
-        avg_pool_g = F.avg_pool2d( g, (g.size(2), g.size(3)), stride=(g.size(2), g.size(3)))
+        avg_pool_g = F.avg_pool2d(
+            g, (g.size(2), g.size(3)), stride=(g.size(2), g.size(3)))
         channel_att_g = self.mlp_g(avg_pool_g)
         channel_att_sum = (channel_att_x + channel_att_g)/2.0
-        scale = th.sigmoid(channel_att_sum).unsqueeze(2).unsqueeze(3).expand_as(x)
+        scale = th.sigmoid(channel_att_sum).unsqueeze(
+            2).unsqueeze(3).expand_as(x)
         x_after_channel = x * scale
         out = self.relu(x_after_channel)
         return out

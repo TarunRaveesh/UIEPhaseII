@@ -10,8 +10,8 @@ import numpy as np
 from torch.nn import ModuleList
 from torch.nn import Conv2d
 from torch.nn import LeakyReLU
-from net.block import *
-from net.block import _equalized_conv2d
+from net.GANBlock import *
+from net.GANBlock import _equalized_conv2d
 from net.SGFMT import TransformerModel
 from net.PositionalEncoding import FixedPositionalEncoding,LearnedPositionalEncoding
 from net.CMSFFT import ChannelTransformer
