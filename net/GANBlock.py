@@ -18,7 +18,7 @@ class PixelwiseNorm(th.nn.Module):
         :param alpha: small number for numerical stability
         :return: y => pixel normalized activations
         """
-        y = x.pow(2.).mean(dim=1, keepdim=True).add(alpha).sqrt()  # [N1HW]
+        y = x.pow(2.).mean(dim=1, keepdim=True).add(alpha).sqrt()  # [B1HW]
         y = x / y  # normalize the input x volume
         return y
 
