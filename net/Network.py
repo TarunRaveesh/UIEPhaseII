@@ -12,9 +12,9 @@ from torch.nn import Conv2d
 from torch.nn import LeakyReLU
 from net.GANBlock import *
 from net.GANBlock import _equalized_conv2d
-from net.SGFMT import TransformerModel
+from net.SDEM import TransformerModel
 from net.PositionalEncoding import FixedPositionalEncoding,LearnedPositionalEncoding
-from net.CMSFFT import ChannelTransformer
+from net.CCEM import ChannelTransformer
 
 
 def weights_init_normal(m):
